@@ -4,12 +4,13 @@ version = 4
 
 [[package]]
 name = "ad-cli"
-version = "0.1.0-beta.2"
+version = "0.1.0-beta.3"
 dependencies = [
  "aes-gcm",
  "chrono",
  "clap",
  "comfy-table",
+ "console",
  "csv",
  "dialoguer",
  "dirs",

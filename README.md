@@ -10,7 +10,7 @@ Kommandozeilen-Tool zum Auslesen von Active-Directory-Daten über LDAPS: Benutze
 ## Funktionen
 
 - **`ad login`** – einmalige Anmeldung am AD; Verbindungsdaten und Zugangsdaten werden danach lokal im Home-Verzeichnis gespeichert, sodass spätere Aufrufe keine erneute Eingabe benötigen.
-- **`ad user <id>`** – zeigt Details eines Benutzers (Name, Mail, Titel, Abteilung, Account-Status, letzter Login, Ablaufdatum, …) als Tabelle oder JSON.
+- **`ad user <id>`** – zeigt Details eines Benutzers (Name, Mail, Titel, Abteilung, Account-Status, letzter Login, Ablaufdatum, …) als kompakte Übersicht, alternativ als ausführliche Tabelle oder JSON.
 - **`ad groups <id>`** – listet die Gruppenmitgliedschaften eines Benutzers. Bei vielen (100+) Gruppen interaktiv durchsuchbar (Fuzzy-Filter), alternativ als CSV/JSON für die Weiterverarbeitung in Skripten. Optional rekursiv (`--recursive`), um auch verschachtelte Mitgliedschaften aufzulösen.
 - **`ad whoami`** / **`ad logout`** – aktuelle Verbindung anzeigen bzw. gespeicherte Zugangsdaten entfernen.
 
@@ -96,7 +96,8 @@ Erst nach erfolgreichem Bind werden Verbindungsdaten und Passwort gespeichert. J
 ### Benutzerdetails abfragen
 
 ```sh
-ad user jdoe
+ad user jdoe                 # kompakte Übersicht (Standard)
+ad user jdoe --output table  # ausführliche Tabelle
 ad user jdoe --output json
 ```
 

@@ -73,12 +73,14 @@ pub struct WhoamiArgs {
 pub struct UserArgs {
     /// sAMAccountName or userPrincipalName of the target user
     pub identifier: String,
-    #[arg(long, value_enum, default_value_t = UserOutputFormat::Table)]
+    /// `compact` is a borderless summary; `table` is the full bordered table.
+    #[arg(long, value_enum, default_value_t = UserOutputFormat::Compact)]
     pub output: UserOutputFormat,
 }
 
 #[derive(Copy, Clone, ValueEnum)]
 pub enum UserOutputFormat {
+    Compact,
     Table,
     Json,
 }

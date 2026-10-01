@@ -15,6 +15,7 @@ pub async fn run(args: UserArgs, config_override: Option<&PathBuf>) -> Result<()
     let _ = conn.unbind().await;
 
     match args.output {
+        UserOutputFormat::Compact => user_view::render_compact(&user),
         UserOutputFormat::Table => user_view::render_table(&user),
         UserOutputFormat::Json => user_view::render_json(&user)?,
     }
