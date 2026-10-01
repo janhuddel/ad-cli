@@ -1,4 +1,5 @@
 pub mod groups_view;
+pub mod user_picker;
 pub mod user_view;
 
 use std::io::IsTerminal;

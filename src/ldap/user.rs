@@ -1,17 +1,18 @@
 use std::collections::HashMap;
 
 use chrono::{DateTime, NaiveDateTime, Utc};
-use ldap3::{Ldap, Scope, SearchEntry};
+use ldap3::{Ldap, Scope, SearchEntry, SearchOptions, SearchResult};
 use serde::Serialize;
 
 use crate::error::{AppError, Result};
-use crate::ldap::user_filter;
+use crate::ldap::{anr_filter, user_filter};
 
 const USER_ATTRS: &[&str] = &[
     "displayName",
     "mail",
     "title",
     "department",
+    "physicalDeliveryOfficeName",
     "telephoneNumber",
     "mobile",
     "userAccountControl",
@@ -38,6 +39,7 @@ pub struct UserRecord {
     pub mail: Option<String>,
     pub title: Option<String>,
     pub department: Option<String>,
+    pub physical_delivery_office_name: Option<String>,
     pub telephone_number: Option<String>,
     pub mobile: Option<String>,
     pub distinguished_name: String,
@@ -62,6 +64,73 @@ pub async fn find_user(ldap: &mut Ldap, base_dn: &str, identifier: &str) -> Resu
         .ok_or_else(|| AppError::UserNotFound(identifier.to_string()))?;
     let entry = SearchEntry::construct(entry);
     Ok(parse_user_record(entry.dn, entry.attrs))
+}
+
+/// Cap on name-search hits; beyond this the term is too vague to be useful.
+pub const SEARCH_LIMIT: i32 = 50;
+
+/// LDAP result code for sizeLimitExceeded: the server still returns the
+/// entries up to the limit, so this is a partial success, not a failure.
+const RC_SIZE_LIMIT_EXCEEDED: u32 = 4;
+
+#[derive(Debug, Clone)]
+pub struct UserCandidate {
+    pub sam_account_name: String,
+    pub display_name: Option<String>,
+    pub department: Option<String>,
+}
+
+/// True if `identifier` matches a user exactly by sAMAccountName or UPN.
+pub async fn user_exists(ldap: &mut Ldap, base_dn: &str, identifier: &str) -> Result<bool> {
+    let filter = user_filter(identifier);
+    let (entries, _res) = ldap
+        .search(base_dn, Scope::Subtree, &filter, vec!["sAMAccountName"])
+        .await?
+        .success()?;
+    Ok(!entries.is_empty())
+}
+
+/// Name search via AD's Ambiguous Name Resolution. Returns the candidates
+/// sorted by display name, plus whether the result was cut off at
+/// `SEARCH_LIMIT`.
+pub async fn search_users(
+    ldap: &mut Ldap,
+    base_dn: &str,
+    term: &str,
+) -> Result<(Vec<UserCandidate>, bool)> {
+    let filter = anr_filter(term);
+    let SearchResult(entries, res) = ldap
+        .with_search_options(SearchOptions::new().sizelimit(SEARCH_LIMIT))
+        .search(
+            base_dn,
+            Scope::Subtree,
+            &filter,
+            vec!["sAMAccountName", "displayName", "department"],
+        )
+        .await?;
+    let truncated = res.rc == RC_SIZE_LIMIT_EXCEEDED;
+    if !truncated {
+        res.success()?;
+    }
+
+    let mut candidates: Vec<UserCandidate> = entries
+        .into_iter()
+        .map(SearchEntry::construct)
+        .filter_map(|e| {
+            Some(UserCandidate {
+                sam_account_name: first(&e.attrs, "sAMAccountName")?,
+                display_name: first(&e.attrs, "displayName"),
+                department: first(&e.attrs, "department"),
+            })
+        })
+        .collect();
+    candidates.sort_by_cached_key(|c| {
+        c.display_name
+            .as_deref()
+            .unwrap_or(&c.sam_account_name)
+            .to_lowercase()
+    });
+    Ok((candidates, truncated))
 }
 
 fn first(attrs: &HashMap<String, Vec<String>>, key: &str) -> Option<String> {
@@ -91,6 +160,7 @@ fn parse_user_record(dn: String, attrs: HashMap<String, Vec<String>>) -> UserRec
         mail: first(&attrs, "mail"),
         title: first(&attrs, "title"),
         department: first(&attrs, "department"),
+        physical_delivery_office_name: first(&attrs, "physicalDeliveryOfficeName"),
         telephone_number: first(&attrs, "telephoneNumber"),
         mobile: first(&attrs, "mobile"),
         distinguished_name: dn,

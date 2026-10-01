@@ -11,6 +11,9 @@ pub enum AppError {
     #[error("No user found matching '{0}'")]
     UserNotFound(String),
 
+    #[error("'{term}' matches several users, specify one of:\n{candidates}")]
+    AmbiguousUser { term: String, candidates: String },
+
     #[error("LDAP error: {0}")]
     Ldap(#[from] ldap3::LdapError),
 

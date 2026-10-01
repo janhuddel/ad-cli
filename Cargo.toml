@@ -1,6 +1,6 @@
 [package]
 name = "ad-cli"
-version = "0.1.0-beta.3"
+version = "0.1.0-beta.4"
 edition = "2021"
 description = "Query Active Directory user details and group memberships over LDAPS"
 authors = ["Jan Rohwer"]

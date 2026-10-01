@@ -48,3 +48,33 @@ pub fn user_filter(identifier: &str) -> String {
     let escaped = escape_filter_value(identifier);
     format!("(|(sAMAccountName={escaped})(userPrincipalName={escaped}))")
 }
+
+/// Ambiguous Name Resolution filter: AD prefix-matches the term against
+/// displayName, givenName, sn, sAMAccountName, mail etc. server-side, and
+/// splits "first last" into a combined givenName/sn match. Restricted to
+/// person/user objects so computers and contacts don't show up.
+pub fn anr_filter(term: &str) -> String {
+    let escaped = escape_filter_value(term);
+    format!("(&(objectCategory=person)(objectClass=user)(anr={escaped}))")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn anr_filter_escapes_special_chars() {
+        assert_eq!(
+            anr_filter("m*(x)\\"),
+            "(&(objectCategory=person)(objectClass=user)(anr=m\\2a\\28x\\29\\5c))"
+        );
+    }
+
+    #[test]
+    fn anr_filter_keeps_umlauts_and_spaces() {
+        assert_eq!(
+            anr_filter("Max Müller"),
+            "(&(objectCategory=person)(objectClass=user)(anr=Max Müller))"
+        );
+    }
+}

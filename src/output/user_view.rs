@@ -60,6 +60,11 @@ fn compact_card(user: &UserRecord, now: DateTime<Utc>) -> String {
         SEP,
     );
     push_line(&mut out, "Contact", &contact);
+    push_line(
+        &mut out,
+        "Office",
+        non_empty(&user.physical_delivery_office_name).unwrap_or_default(),
+    );
 
     push_line(
         &mut out,
@@ -182,6 +187,12 @@ pub fn render_table(user: &UserRecord) {
         ("Title", user.title.clone().unwrap_or_default()),
         ("Department", user.department.clone().unwrap_or_default()),
         (
+            "Office",
+            user.physical_delivery_office_name
+                .clone()
+                .unwrap_or_default(),
+        ),
+        (
             "Telephone",
             user.telephone_number.clone().unwrap_or_default(),
         ),
@@ -242,6 +253,7 @@ mod tests {
             mail: Some("max.mustermann@corp.example".into()),
             title: Some("Senior Engineer".into()),
             department: Some("IT Infrastructure".into()),
+            physical_delivery_office_name: Some("Berlin, Raum 4.12".into()),
             telephone_number: Some("+49 30 1234".into()),
             mobile: None,
             distinguished_name: "CN=Max Mustermann,OU=Users,DC=corp,DC=example".into(),
@@ -295,13 +307,14 @@ mod tests {
             lines[4],
             "  Contact  max.mustermann@corp.example  ·  +49 30 1234"
         );
+        assert_eq!(lines[5], "  Office   Berlin, Raum 4.12");
         assert!(
-            lines[5].starts_with("  Logon    2026-09-30 ")
-                && lines[5].ends_with("(1d ago, this DC)")
+            lines[6].starts_with("  Logon    2026-09-30 ")
+                && lines[6].ends_with("(1d ago, this DC)")
         );
-        assert_eq!(lines[6], "           never (replicated)");
-        assert!(lines[7].ends_with("  ·  Expires never"));
-        assert_eq!(lines.len(), 9);
+        assert_eq!(lines[7], "           never (replicated)");
+        assert!(lines[8].ends_with("  ·  Expires never"));
+        assert_eq!(lines.len(), 10);
     }
 
     #[test]
@@ -312,10 +325,12 @@ mod tests {
             telephone_number: Some(String::new()),
             title: None,
             department: None,
+            physical_delivery_office_name: None,
             ..sample()
         };
         let card = compact_card(&user, now());
         assert!(!card.contains("Contact"));
+        assert!(!card.contains("Office"));
         assert!(card.starts_with("Max Mustermann\n\n"));
     }
 }

@@ -100,7 +100,10 @@ Erst nach erfolgreichem Bind werden Verbindungsdaten und Passwort gespeichert. J
 ad user jdoe                 # kompakte Übersicht (Standard)
 ad user jdoe --output table  # ausführliche Tabelle
 ad user jdoe --output json
+ad user müller               # Suche per Name (Nachname, Vorname, "Max Mül", Mail-Präfix …)
 ```
+
+Wird kein Benutzer mit genau dieser Kennung (sAMAccountName/UPN) gefunden, sucht `ad` per *Ambiguous Name Resolution* in Anzeigename, Vor-/Nachname, Kontoname und Mail (Präfix-Suche). Bei genau einem Treffer wird er direkt angezeigt. Bei mehreren erscheint im Terminal eine Fuzzy-Auswahl, ohne Terminal endet der Befehl mit einer Kandidatenliste (Exit-Code 1). Das gilt genauso für `ad groups`.
 
 ### Gruppenmitgliedschaften abfragen
 

@@ -71,7 +71,8 @@ pub struct WhoamiArgs {
 
 #[derive(Args)]
 pub struct UserArgs {
-    /// sAMAccountName or userPrincipalName of the target user
+    /// sAMAccountName, userPrincipalName, or a name to search for (e.g. last
+    /// name or "first last"); several matches open a picker
     pub identifier: String,
     /// `compact` is a borderless summary; `table` is the full bordered table.
     #[arg(long, value_enum, default_value_t = UserOutputFormat::Compact)]
@@ -87,7 +88,8 @@ pub enum UserOutputFormat {
 
 #[derive(Args)]
 pub struct GroupsArgs {
-    /// sAMAccountName or userPrincipalName of the target user
+    /// sAMAccountName, userPrincipalName, or a name to search for (e.g. last
+    /// name or "first last"); several matches open a picker
     pub identifier: String,
     /// Resolve nested/transitive membership too, not just direct memberOf.
     #[arg(long)]
