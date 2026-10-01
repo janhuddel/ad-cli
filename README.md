@@ -16,20 +16,22 @@ Kommandozeilen-Tool zum Auslesen von Active-Directory-Daten über LDAPS: Benutze
 
 ## Download
 
-Fertige Binaries gibt es auf der [Releases-Seite](https://github.com/janhuddel/ad-cli/releases):
+Fertige Binaries gibt es auf der [Releases-Seite](https://github.com/janhuddel/ad-cli/releases) unter *Assets*. Beide sind statisch gelinkt und brauchen keine weiteren Abhängigkeiten (unter Windows keine Visual-C++-Runtime):
 
-| Plattform | Datei |
-|---|---|
-| Windows (x86_64) | `ad-<version>-x86_64-windows.zip` – enthält `ad.exe`, ohne Laufzeit-Abhängigkeiten |
-| Linux (x86_64) | `ad-<version>-x86_64-linux.tar.gz` – statisch gelinkt, läuft auf jeder Distribution |
+| Plattform | Direkt-Download | Archiv (inkl. README, LICENSE, CHANGELOG) |
+|---|---|---|
+| Windows (x86_64) | `ad-<version>-x86_64-windows.exe` | `ad-<version>-x86_64-windows.zip` |
+| Linux (x86_64) | `ad-<version>-x86_64-linux` | `ad-<version>-x86_64-linux.tar.gz` |
 
-Zu jedem Archiv gibt es eine `.sha256`-Datei zur Prüfung:
+Die Datei kann nach dem Download beliebig umbenannt werden, z. B. in `ad.exe` bzw. `ad` (unter Linux danach `chmod +x ad`).
+
+Die Prüfsummen aller Dateien stehen in `SHA256SUMS.txt`:
 
 ```sh
-sha256sum -c ad-<version>-x86_64-linux.tar.gz.sha256
+sha256sum -c --ignore-missing SHA256SUMS.txt
 ```
 ```powershell
-(Get-FileHash ad-<version>-x86_64-windows.zip -Algorithm SHA256).Hash   # mit Inhalt der .sha256-Datei vergleichen
+(Get-FileHash ad-<version>-x86_64-windows.exe -Algorithm SHA256).Hash   # mit dem Eintrag in SHA256SUMS.txt vergleichen
 ```
 
 **macOS wird derzeit nicht unterstützt:** Die Verschlüsselung der gespeicherten Zugangsdaten setzt unter Unix `/etc/machine-id` voraus, die es auf macOS nicht gibt. Ein Build ist möglich, `ad login` schlägt dort aber fehl.
@@ -158,7 +160,7 @@ git tag -a v0.1.0-beta.2 -m "v0.1.0-beta.2"
 git push origin main --follow-tags
 ```
 
-Der Tag-Push startet den Workflow `.github/workflows/release.yml`. Er prüft, dass Tag und `Cargo.toml`-Version übereinstimmen, baut die Windows- und Linux-Binaries und legt ein GitHub-Release mit Archiven und Prüfsummen an.
+Der Tag-Push startet den Workflow `.github/workflows/release.yml`. Er prüft, dass Tag und `Cargo.toml`-Version übereinstimmen, baut die Windows- und Linux-Binaries und legt ein GitHub-Release mit den Binaries, Archiven und `SHA256SUMS.txt` an.
 
 ## Lizenz
 

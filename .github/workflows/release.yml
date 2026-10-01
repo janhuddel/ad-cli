@@ -69,8 +69,7 @@ jobs:
           New-Item -ItemType Directory -Path $env:ARCHIVE | Out-Null
           Copy-Item "target/${{ matrix.target }}/release/ad.exe", README.md, LICENSE, CHANGELOG.md $env:ARCHIVE
           Compress-Archive -Path $env:ARCHIVE -DestinationPath "$env:ARCHIVE.zip"
-          $hash = (Get-FileHash "$env:ARCHIVE.zip" -Algorithm SHA256).Hash.ToLower()
-          "$hash  $env:ARCHIVE.zip" | Out-File -Encoding ascii -NoNewline "$env:ARCHIVE.zip.sha256"
+          Copy-Item "target/${{ matrix.target }}/release/ad.exe" "$env:ARCHIVE.exe"
 
       - name: Package (Linux)
         if: runner.os == 'Linux'
@@ -79,15 +78,16 @@ jobs:
           mkdir "$ARCHIVE"
           cp "target/${{ matrix.target }}/release/ad" README.md LICENSE CHANGELOG.md "$ARCHIVE/"
           tar -czf "$ARCHIVE.tar.gz" "$ARCHIVE"
-          sha256sum "$ARCHIVE.tar.gz" > "$ARCHIVE.tar.gz.sha256"
+          cp "target/${{ matrix.target }}/release/ad" "$ARCHIVE"-bin
 
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ env.ARCHIVE }}
           path: |
             ${{ env.ARCHIVE }}.zip
+            ${{ env.ARCHIVE }}.exe
             ${{ env.ARCHIVE }}.tar.gz
-            ${{ env.ARCHIVE }}.*.sha256
+            ${{ env.ARCHIVE }}-bin
           if-no-files-found: error
 
   release:
@@ -100,6 +100,12 @@ jobs:
         with:
           path: dist
           merge-multiple: true
+      - name: Name raw Linux binary and write checksums
+        working-directory: dist
+        run: |
+          for f in *-bin; do mv "$f" "${f%-bin}"; done
+          sha256sum * > SHA256SUMS.txt
+          cat SHA256SUMS.txt
       - uses: softprops/action-gh-release@v2
         with:
           name: ad-cli ${{ github.ref_name }}
