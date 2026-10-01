@@ -1,3 +1,4 @@
+pub mod fuzzy_picker;
 pub mod groups_view;
 pub mod user_picker;
 pub mod user_view;

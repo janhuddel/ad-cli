@@ -1,8 +1,6 @@
-use dialoguer::FuzzySelect;
-
 use crate::error::{AppError, Result};
 use crate::ldap::user::{UserCandidate, SEARCH_LIMIT};
-use crate::output::stdout_is_interactive;
+use crate::output::{fuzzy_picker, stdout_is_interactive};
 
 /// Lets the user choose among several name-search hits. On a TTY this is a
 /// fuzzy select (`None` if aborted with Esc); without a TTY we never guess
@@ -25,12 +23,7 @@ pub fn pick(term: &str, candidates: &[UserCandidate], truncated: bool) -> Result
         )
     };
 
-    let selection = FuzzySelect::new()
-        .with_prompt(&prompt)
-        .items(&items)
-        .default(0)
-        .interact_opt()
-        .map_err(|e| AppError::Other(e.to_string()))?;
+    let selection = fuzzy_picker::pick(&prompt, &items)?;
     Ok(selection.map(|i| candidates[i].sam_account_name.clone()))
 }
 

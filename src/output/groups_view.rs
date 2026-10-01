@@ -1,10 +1,9 @@
 use comfy_table::{presets::UTF8_FULL, Table};
-use dialoguer::FuzzySelect;
 
 use crate::cli::GroupsOutputFormat;
 use crate::error::{AppError, Result};
 use crate::ldap::groups::GroupRecord;
-use crate::output::stdout_is_interactive;
+use crate::output::{fuzzy_picker, stdout_is_interactive};
 
 /// Primary UX is the interactive fuzzy filter (for a human at a terminal who
 /// needs to make sense of 100+ groups); CSV/JSON/plain-table are the
@@ -81,12 +80,7 @@ fn interactive_filter(groups: &[GroupRecord]) -> Result<()> {
     );
 
     loop {
-        let selection = FuzzySelect::new()
-            .with_prompt(&prompt)
-            .items(&items)
-            .default(0)
-            .interact_opt()
-            .map_err(|e| AppError::Other(e.to_string()))?;
+        let selection = fuzzy_picker::pick(&prompt, &items)?;
 
         let Some(index) = selection else {
             break;

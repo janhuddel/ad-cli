@@ -6,6 +6,14 @@ Das Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 
 ## [Unreleased]
 
+## [0.1.0-beta.5] - 2026-10-01
+
+### Geändert
+- Die interaktive Fuzzy-Auswahl (`ad groups`, Benutzerauswahl bei mehreren Treffern) flackert beim Navigieren nicht mehr und zeigt höchstens 15 Einträge gleichzeitig.
+
+### Hinzugefügt
+- In der Fuzzy-Auswahl blättern Bild↑/Bild↓ seitenweise, Pos1/Ende springen an Anfang/Ende der Liste; eine Fußzeile zeigt die aktuelle Position (z. B. `12/367`).
+
 ## [0.1.0-beta.4] - 2026-10-01
 
 ### Hinzugefügt
