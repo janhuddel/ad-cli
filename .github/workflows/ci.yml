@@ -23,11 +23,12 @@ jobs:
 
   build:
     # Windows is built separately because credentials/windows.rs is cfg(windows)
-    # and is never type-checked on a Linux runner.
+    # and is never type-checked on a Linux runner. The Linux build is disabled for
+    # now (only Windows is needed); the lint job still type-checks the unix code.
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        os: [windows-latest] # re-add ubuntu-latest to build/test on Linux again
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4

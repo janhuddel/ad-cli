@@ -16,14 +16,15 @@ Kommandozeilen-Tool zum Auslesen von Active-Directory-Daten über LDAPS: Benutze
 
 ## Download
 
-Fertige Binaries gibt es auf der [Releases-Seite](https://github.com/janhuddel/ad-cli/releases) unter *Assets*. Beide sind statisch gelinkt und brauchen keine weiteren Abhängigkeiten (unter Windows keine Visual-C++-Runtime):
+Fertige Binaries gibt es auf der [Releases-Seite](https://github.com/janhuddel/ad-cli/releases) unter *Assets*. Das Binary ist statisch gelinkt und brauchen keine weiteren Abhängigkeiten (unter Windows keine Visual-C++-Runtime):
 
 | Plattform | Direkt-Download | Archiv (inkl. README, LICENSE, CHANGELOG) |
 |---|---|---|
 | Windows (x86_64) | `ad-<version>-x86_64-windows.exe` | `ad-<version>-x86_64-windows.zip` |
-| Linux (x86_64) | `ad-<version>-x86_64-linux` | `ad-<version>-x86_64-linux.tar.gz` |
 
-Die Datei kann nach dem Download beliebig umbenannt werden, z. B. in `ad.exe` bzw. `ad` (unter Linux danach `chmod +x ad`).
+Linux-Binaries werden derzeit nicht automatisch gebaut; unter Linux kann das Tool selbst kompiliert werden (siehe [Statisches Linux-Binary](#statisches-linux-binary)).
+
+Die Datei kann nach dem Download beliebig umbenannt werden, z. B. in `ad.exe`.
 
 Die Prüfsummen aller Dateien stehen in `SHA256SUMS.txt`:
 
@@ -161,7 +162,7 @@ git tag -a v0.1.0-beta.2 -m "v0.1.0-beta.2"
 git push origin main --follow-tags
 ```
 
-Der Tag-Push startet den Workflow `.github/workflows/release.yml`. Er prüft, dass Tag und `Cargo.toml`-Version übereinstimmen, baut die Windows- und Linux-Binaries und legt ein GitHub-Release mit den Binaries, Archiven und `SHA256SUMS.txt` an.
+Der Tag-Push startet den Workflow `.github/workflows/release.yml`. Er prüft, dass Tag und `Cargo.toml`-Version übereinstimmen, baut das Windows-Binary und legt ein GitHub-Release mit den Binaries, Archiven und `SHA256SUMS.txt` an.
 
 ## Lizenz
 

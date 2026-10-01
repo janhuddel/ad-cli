@@ -35,9 +35,11 @@ jobs:
           - target: x86_64-pc-windows-msvc
             os: windows-latest
             platform: x86_64-windows
-          - target: x86_64-unknown-linux-musl
-            os: ubuntu-latest
-            platform: x86_64-linux
+          # Linux release build disabled for now (only Windows is needed, saves
+          # pipeline time). Re-enable by uncommenting:
+          # - target: x86_64-unknown-linux-musl
+          #   os: ubuntu-latest
+          #   platform: x86_64-linux
     runs-on: ${{ matrix.os }}
     env:
       ARCHIVE: ad-${{ needs.verify-version.outputs.version }}-${{ matrix.platform }}
@@ -103,6 +105,7 @@ jobs:
       - name: Name raw Linux binary and write checksums
         working-directory: dist
         run: |
+          shopt -s nullglob
           for f in *-bin; do mv "$f" "${f%-bin}"; done
           sha256sum * > SHA256SUMS.txt
           cat SHA256SUMS.txt
