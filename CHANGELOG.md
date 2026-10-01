@@ -6,6 +6,10 @@ Das Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-10-01
+
+Erste stabile Version. Funktional identisch mit `0.1.0-beta.5`; CLI-Optionen sowie die JSON- und CSV-Ausgabeformate gelten ab jetzt als stabile Schnittstelle (Semantic Versioning).
+
 ## [0.1.0-beta.5] - 2026-10-01
 
 ### Geändert

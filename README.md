@@ -143,25 +143,24 @@ Ein Passwort wird nie als Kommandozeilenargument akzeptiert (würde in der Shell
 
 ## Bekannte Einschränkungen
 
-- Es gibt noch keine automatisierten Tests; die LDAP-Logik (Ranged-`memberOf`-Abruf, rekursive Gruppenauflösung, Attribut-Parsing) wurde bisher nicht gegen ein echtes Active Directory verifiziert.
+- Automatisierte Tests decken nur Ausgabeformatierung und Auswahl-Logik ab; die LDAP-Logik (Ranged-`memberOf`-Abruf, rekursive Gruppenauflösung, Attribut-Parsing) wird nicht automatisiert gegen ein AD getestet. Der Ranged-Abruf greift erst ab mehr als 1500 direkten Gruppen und ist in der Praxis kaum erprobt.
 - `lastLogon` wird nicht zwischen Domain Controllern repliziert und spiegelt daher nur den antwortenden DC wider; `lastLogonTimestamp` ist repliziert, kann aber bis zu ~14 Tage nachhinken.
 
 ## Versionierung & Release
 
 Das Projekt folgt [Semantic Versioning](https://semver.org/lang/de/). Die maßgebliche Version steht in `Cargo.toml` (`ad --version` zeigt sie an), Git-Tags tragen ein `v`-Präfix:
 
-- **Beta-Phase:** `0.1.0-beta.1`, `0.1.0-beta.2`, … – Tags mit Bindestrich (`v0.1.0-beta.1`) werden auf GitHub automatisch als *Pre-release* markiert.
-- **`0.1.0`**: erste stabile Version, sobald das Tool gegen ein echtes AD verifiziert ist. In der 0.x-Reihe dürfen Minor-Versionen noch inkompatible Änderungen enthalten.
-- **`1.0.0`**: sobald CLI-Optionen und die JSON-/CSV-Ausgabeformate als stabile Schnittstelle gelten.
+- **`1.0.0`** ist die erste stabile Version (davor Betas `0.1.0-beta.N`). Ab hier gelten CLI-Optionen und die JSON-/CSV-Ausgabeformate als stabile Schnittstelle: inkompatible Änderungen daran erfordern eine neue Major-Version, neue Funktionen eine Minor-, Fehlerbehebungen eine Patch-Version.
+- Vorabversionen tragen ein Suffix (z. B. `1.1.0-beta.1`); Tags mit Bindestrich werden auf GitHub automatisch als *Pre-release* markiert.
 
 Ein Release erstellen:
 
 ```sh
-# 1. Version in Cargo.toml anpassen, z. B. version = "0.1.0-beta.2"
+# 1. Version in Cargo.toml anpassen, z. B. version = "1.0.1"
 cargo check                       # aktualisiert Cargo.lock
 # 2. CHANGELOG.md: Abschnitt [Unreleased] in die neue Version überführen
-git commit -am "chore: release v0.1.0-beta.2"
-git tag -a v0.1.0-beta.2 -m "v0.1.0-beta.2"
+git commit -am "chore: release v1.0.1"
+git tag -a v1.0.1 -m "v1.0.1"
 git push origin main --follow-tags
 ```
 
