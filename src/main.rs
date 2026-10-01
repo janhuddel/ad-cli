@@ -21,6 +21,7 @@ async fn main() {
         Commands::Whoami(args) => commands::whoami::run(args, config_override).await,
         Commands::User(args) => commands::user::run(args, config_override).await,
         Commands::Groups(args) => commands::groups::run(args, config_override).await,
+        Commands::Members(args) => commands::members::run(args, config_override).await,
     };
 
     if let Err(err) = result {

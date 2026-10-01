@@ -71,7 +71,7 @@ pub const SEARCH_LIMIT: i32 = 50;
 
 /// LDAP result code for sizeLimitExceeded: the server still returns the
 /// entries up to the limit, so this is a partial success, not a failure.
-const RC_SIZE_LIMIT_EXCEEDED: u32 = 4;
+pub(crate) const RC_SIZE_LIMIT_EXCEEDED: u32 = 4;
 
 #[derive(Debug, Clone)]
 pub struct UserCandidate {
@@ -133,7 +133,7 @@ pub async fn search_users(
     Ok((candidates, truncated))
 }
 
-fn first(attrs: &HashMap<String, Vec<String>>, key: &str) -> Option<String> {
+pub(crate) fn first(attrs: &HashMap<String, Vec<String>>, key: &str) -> Option<String> {
     attrs.get(key).and_then(|v| v.first()).cloned()
 }
 

@@ -58,6 +58,20 @@ pub fn anr_filter(term: &str) -> String {
     format!("(&(objectCategory=person)(objectClass=user)(anr={escaped}))")
 }
 
+/// Filter used to locate a group exactly by sAMAccountName, CN or DN.
+pub fn group_filter(identifier: &str) -> String {
+    let escaped = escape_filter_value(identifier);
+    format!(
+        "(&(objectCategory=group)(|(sAMAccountName={escaped})(cn={escaped})(distinguishedName={escaped})))"
+    )
+}
+
+/// Ambiguous Name Resolution filter restricted to group objects.
+pub fn group_anr_filter(term: &str) -> String {
+    let escaped = escape_filter_value(term);
+    format!("(&(objectCategory=group)(anr={escaped}))")
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -75,6 +89,18 @@ mod tests {
         assert_eq!(
             anr_filter("Max Müller"),
             "(&(objectCategory=person)(objectClass=user)(anr=Max Müller))"
+        );
+    }
+
+    #[test]
+    fn group_filters_escape_special_chars() {
+        assert_eq!(
+            group_filter("g*(x)"),
+            "(&(objectCategory=group)(|(sAMAccountName=g\\2a\\28x\\29)(cn=g\\2a\\28x\\29)(distinguishedName=g\\2a\\28x\\29)))"
+        );
+        assert_eq!(
+            group_anr_filter("App-Admins*"),
+            "(&(objectCategory=group)(anr=App-Admins\\2a))"
         );
     }
 }

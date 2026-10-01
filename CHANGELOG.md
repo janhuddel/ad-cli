@@ -6,6 +6,9 @@ Das Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 
 ## [Unreleased]
 
+### Hinzugefügt
+- `ad members <gruppe>` listet die Mitglieder einer Gruppe (Name, sAMAccountName, Typ, Aktiv-Status, DN), optional inkl. verschachtelter Mitglieder (`--recursive`). Die Gruppe wird per sAMAccountName, CN oder DN angegeben oder per Namenssuche gefunden. Ausgabe wie bei `ad groups` als interaktiver Fuzzy-Filter oder per `--output table|csv|json`. Mitgliedschaften über die primäre Gruppe (z. B. „Domain Users“) werden nicht erfasst.
+
 ## [1.0.0] - 2026-10-01
 
 Erste stabile Version. Funktional identisch mit `0.1.0-beta.5`; CLI-Optionen sowie die JSON- und CSV-Ausgabeformate gelten ab jetzt als stabile Schnittstelle (Semantic Versioning).

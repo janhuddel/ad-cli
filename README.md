@@ -12,6 +12,7 @@ Kommandozeilen-Tool zum Auslesen von Active-Directory-Daten über LDAPS: Benutze
 - **`ad login`** – einmalige Anmeldung am AD; Verbindungsdaten und Zugangsdaten werden danach lokal im Home-Verzeichnis gespeichert, sodass spätere Aufrufe keine erneute Eingabe benötigen.
 - **`ad user <id>`** – zeigt Details eines Benutzers (Name, Mail, Titel, Abteilung, Account-Status, letzter Login, Ablaufdatum, …) als kompakte Übersicht, alternativ als ausführliche Tabelle oder JSON.
 - **`ad groups <id>`** – listet die Gruppenmitgliedschaften eines Benutzers. Bei vielen (100+) Gruppen interaktiv durchsuchbar (Fuzzy-Filter), alternativ als CSV/JSON für die Weiterverarbeitung in Skripten. Optional rekursiv (`--recursive`), um auch verschachtelte Mitgliedschaften aufzulösen.
+- **`ad members <gruppe>`** – listet die Mitglieder einer Gruppe (Benutzer, Gruppen, Computer, Kontakte), ebenfalls interaktiv durchsuchbar oder als Tabelle/CSV/JSON, optional rekursiv.
 - **`ad whoami`** / **`ad logout`** – aktuelle Verbindung anzeigen bzw. gespeicherte Zugangsdaten entfernen.
 
 ## Download
@@ -116,6 +117,19 @@ ad groups jdoe --output json
 
 Läuft die Ausgabe nicht in einem Terminal (z. B. Pipe oder Umleitung), wird automatisch auf eine einfache Tabellenausgabe umgeschaltet statt des interaktiven Filters.
 
+### Mitglieder einer Gruppe abfragen
+
+```sh
+ad members App-Admins                 # interaktiver Fuzzy-Filter im Terminal
+ad members App-Admins --recursive     # inkl. Mitglieder verschachtelter Gruppen
+ad members "CN=App-Admins,OU=Gruppen,DC=example,DC=com" --output csv > mitglieder.csv
+ad members App-Admins --output json
+```
+
+Die Gruppe kann per sAMAccountName, CN oder DN angegeben werden. Ohne exakten Treffer wird – wie bei Benutzern – per Namenssuche gesucht; mehrere Treffer öffnen im Terminal eine Auswahl, ohne Terminal endet der Befehl mit einer Liste der passenden DNs. Gibt es denselben CN in mehreren OUs, hilft die Angabe des DN.
+
+Ausgegeben werden Name, sAMAccountName, Typ (`user`, `group`, `computer`, `contact`, `other`), Aktiv-Status (nur für Benutzer/Computer) und DN. Mit `--recursive` erscheinen verschachtelte Gruppen selbst ebenfalls in der Liste.
+
 ### Abmelden / Status
 
 ```sh
@@ -144,6 +158,7 @@ Ein Passwort wird nie als Kommandozeilenargument akzeptiert (würde in der Shell
 ## Bekannte Einschränkungen
 
 - Automatisierte Tests decken nur Ausgabeformatierung und Auswahl-Logik ab; die LDAP-Logik (Ranged-`memberOf`-Abruf, rekursive Gruppenauflösung, Attribut-Parsing) wird nicht automatisiert gegen ein AD getestet. Der Ranged-Abruf greift erst ab mehr als 1500 direkten Gruppen und ist in der Praxis kaum erprobt.
+- `ad members` listet keine Mitgliedschaften über die *primäre Gruppe* eines Kontos (`primaryGroupID`, typischerweise „Domain Users“ / „Domänen-Benutzer“): AD speichert diese weder im `member`- noch im `memberOf`-Attribut.
 - `lastLogon` wird nicht zwischen Domain Controllern repliziert und spiegelt daher nur den antwortenden DC wider; `lastLogonTimestamp` ist repliziert, kann aber bis zu ~14 Tage nachhinken.
 
 ## Versionierung & Release

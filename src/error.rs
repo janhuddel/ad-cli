@@ -14,6 +14,12 @@ pub enum AppError {
     #[error("'{term}' matches several users, specify one of:\n{candidates}")]
     AmbiguousUser { term: String, candidates: String },
 
+    #[error("No group found matching '{0}'")]
+    GroupNotFound(String),
+
+    #[error("'{term}' matches several groups, specify one of:\n{candidates}")]
+    AmbiguousGroup { term: String, candidates: String },
+
     #[error("LDAP error: {0}")]
     Ldap(#[from] ldap3::LdapError),
 

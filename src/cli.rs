@@ -33,6 +33,8 @@ pub enum Commands {
     User(UserArgs),
     /// Show group memberships for a single AD user
     Groups(GroupsArgs),
+    /// Show the members of a single AD group
+    Members(MembersArgs),
 }
 
 #[derive(Args)]
@@ -104,6 +106,29 @@ pub struct GroupsArgs {
 
 #[derive(Copy, Clone, PartialEq, Eq, ValueEnum)]
 pub enum GroupsOutputFormat {
+    Table,
+    Csv,
+    Json,
+}
+
+#[derive(Args)]
+pub struct MembersArgs {
+    /// sAMAccountName, CN or DN of the group, or a name to search for;
+    /// several matches open a picker
+    pub group: String,
+    /// Resolve nested/transitive membership too, not just direct members.
+    #[arg(long)]
+    pub recursive: bool,
+    /// Defaults to an interactive fuzzy filter on a TTY, or a plain table otherwise.
+    #[arg(long, value_enum)]
+    pub output: Option<MembersOutputFormat>,
+    /// Force plain output even when stdout is a TTY.
+    #[arg(long = "no-interactive")]
+    pub no_interactive: bool,
+}
+
+#[derive(Copy, Clone, PartialEq, Eq, ValueEnum)]
+pub enum MembersOutputFormat {
     Table,
     Csv,
     Json,
