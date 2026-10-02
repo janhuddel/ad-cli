@@ -6,6 +6,8 @@ Das Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-10-02
+
 ### Geändert
 - `ad members`: Die Gruppensuche findet Teilbegriffe statt nur Namensanfänge – jedes eingegebene Wort muss irgendwo in CN, sAMAccountName oder Beschreibung vorkommen (z. B. `ad members sap admin` → „GRP-SAP-Admins“). Die Treffer erscheinen ohne 50er-Grenze in der Fuzzy-Auswahl.
 
@@ -56,7 +58,8 @@ Erste öffentliche Beta-Version. **Noch nicht gegen ein echtes Active Directory 
 - `ad groups <id>`: Gruppenmitgliedschaften (direkt oder mit `--recursive` transitiv) mit interaktivem Fuzzy-Filter im Terminal oder als Tabelle/CSV/JSON.
 - Release-Binaries für Windows (x86_64, statisches CRT) und Linux (x86_64, statisch gelinkt mit musl).
 
-[Unreleased]: https://github.com/janhuddel/ad-cli/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/janhuddel/ad-cli/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/janhuddel/ad-cli/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/janhuddel/ad-cli/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/janhuddel/ad-cli/compare/v0.1.0-beta.5...v1.0.0
 [0.1.0-beta.5]: https://github.com/janhuddel/ad-cli/compare/v0.1.0-beta.4...v0.1.0-beta.5
