@@ -6,6 +6,11 @@ Das Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 
 ## [Unreleased]
 
+## [2.0.0-beta.3] - 2026-10-02
+
+### Geändert
+- `idm user` zeigt statt aller Rohattribute eine kompakte Übersicht wie `ad user`: Login- und Mitarbeiterstatus, Mail, Organisationseinheit, Kostenstelle, Vorgesetzte(r) und letzte(r) Bearbeiter(in) mit Namen, Ein- und Austrittsdatum (ein naher oder vergangener Austritt wird farbig hervorgehoben, `31.12.9999` erscheint als „no end date“) sowie die Zahl der Rechte. `idm user --all` hängt wie bisher alle Attribute an. Die JSON-Ausgabe ist unverändert.
+
 ## [2.0.0-beta.2] - 2026-10-02
 
 ### Behoben
@@ -75,7 +80,8 @@ Erste öffentliche Beta-Version. **Noch nicht gegen ein echtes Active Directory 
 - `ad groups <id>`: Gruppenmitgliedschaften (direkt oder mit `--recursive` transitiv) mit interaktivem Fuzzy-Filter im Terminal oder als Tabelle/CSV/JSON.
 - Release-Binaries für Windows (x86_64, statisches CRT) und Linux (x86_64, statisch gelinkt mit musl).
 
-[Unreleased]: https://github.com/janhuddel/ad-cli/compare/v2.0.0-beta.2...HEAD
+[Unreleased]: https://github.com/janhuddel/ad-cli/compare/v2.0.0-beta.3...HEAD
+[2.0.0-beta.3]: https://github.com/janhuddel/ad-cli/compare/v2.0.0-beta.2...v2.0.0-beta.3
 [2.0.0-beta.2]: https://github.com/janhuddel/ad-cli/compare/v2.0.0-beta.1...v2.0.0-beta.2
 [2.0.0-beta.1]: https://github.com/janhuddel/ad-cli/compare/v1.2.0...v2.0.0-beta.1
 [1.2.0]: https://github.com/janhuddel/ad-cli/compare/v1.1.0...v1.2.0
