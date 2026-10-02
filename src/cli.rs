@@ -113,9 +113,10 @@ pub enum GroupsOutputFormat {
 
 #[derive(Args)]
 pub struct MembersArgs {
-    /// sAMAccountName, CN or DN of the group, or a name to search for;
-    /// several matches open a picker
-    pub group: String,
+    /// sAMAccountName, CN or DN of the group, or words to search for (each
+    /// must occur somewhere in CN, sAMAccountName or description); several
+    /// matches open a fuzzy picker. Omit to pick from all groups.
+    pub group: Vec<String>,
     /// Resolve nested/transitive membership too, not just direct members.
     #[arg(long)]
     pub recursive: bool,

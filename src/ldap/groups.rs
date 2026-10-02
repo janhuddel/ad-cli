@@ -1,10 +1,10 @@
 use ldap3::controls::PagedResults;
-use ldap3::{Ldap, Scope, SearchEntry, SearchOptions, SearchResult};
+use ldap3::{Ldap, Scope, SearchEntry};
 use serde::Serialize;
 
 use crate::error::{AppError, Result};
-use crate::ldap::user::{first, RC_SIZE_LIMIT_EXCEEDED, SEARCH_LIMIT};
-use crate::ldap::{escape_filter_value, group_anr_filter, group_filter, user_filter};
+use crate::ldap::user::first;
+use crate::ldap::{escape_filter_value, group_filter, group_search_filter, user_filter};
 
 /// OID for the LDAP_MATCHING_RULE_IN_CHAIN extensible match, used to resolve
 /// nested (transitive) group membership in one query family instead of
@@ -265,32 +265,27 @@ pub async fn find_group_dn(
     }
 }
 
-/// Group name search via AD's Ambiguous Name Resolution. Returns the
-/// candidates sorted by CN, plus whether the result was cut off at
-/// `SEARCH_LIMIT`.
+/// Group search for the picker: every word of `term` must occur as a
+/// substring in CN, sAMAccountName or description; an empty term returns
+/// all groups. Paged and not size-limited — the fuzzy picker copes with
+/// thousands of entries, and a cut-off list would hide the wanted group.
+/// Sorted by CN.
 pub async fn search_groups(
     ldap: &mut Ldap,
     base_dn: &str,
     term: &str,
-) -> Result<(Vec<GroupCandidate>, bool)> {
-    let filter = group_anr_filter(term);
-    let SearchResult(entries, res) = ldap
-        .with_search_options(SearchOptions::new().sizelimit(SEARCH_LIMIT))
-        .search(
-            base_dn,
-            Scope::Subtree,
-            &filter,
-            vec!["cn", "distinguishedName", "description"],
-        )
-        .await?;
-    let truncated = res.rc == RC_SIZE_LIMIT_EXCEEDED;
-    if !truncated {
-        res.success()?;
-    }
+) -> Result<Vec<GroupCandidate>> {
+    let filter = group_search_filter(term);
+    let entries = paged_search(
+        ldap,
+        base_dn,
+        &filter,
+        &["cn", "distinguishedName", "description"],
+    )
+    .await?;
 
     let mut candidates: Vec<GroupCandidate> = entries
         .into_iter()
-        .map(SearchEntry::construct)
         .map(|e| GroupCandidate {
             cn: first(&e.attrs, "cn").unwrap_or_else(|| e.dn.clone()),
             description: first(&e.attrs, "description"),
@@ -298,7 +293,7 @@ pub async fn search_groups(
         })
         .collect();
     candidates.sort_by_cached_key(|c| c.cn.to_lowercase());
-    Ok((candidates, truncated))
+    Ok(candidates)
 }
 
 // userAccountControl: account disabled.

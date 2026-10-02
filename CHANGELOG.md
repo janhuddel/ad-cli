@@ -6,6 +6,12 @@ Das Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 
 ## [Unreleased]
 
+### Geändert
+- `ad members`: Die Gruppensuche findet Teilbegriffe statt nur Namensanfänge – jedes eingegebene Wort muss irgendwo in CN, sAMAccountName oder Beschreibung vorkommen (z. B. `ad members sap admin` → „GRP-SAP-Admins“). Die Treffer erscheinen ohne 50er-Grenze in der Fuzzy-Auswahl.
+
+### Hinzugefügt
+- `ad members` ohne Argument bietet im Terminal alle Gruppen in der Fuzzy-Auswahl an.
+
 ## [1.1.0] - 2026-10-01
 
 ### Hinzugefügt

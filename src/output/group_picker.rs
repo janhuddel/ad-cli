@@ -1,22 +1,28 @@
 use crate::error::{AppError, Result};
 use crate::ldap::groups::GroupCandidate;
-use crate::ldap::user::SEARCH_LIMIT;
 use crate::output::{fuzzy_picker, stdout_is_interactive};
 
-/// Lets the user choose among several group name-search hits and returns the
-/// chosen group's DN. Same rules as `user_picker::pick`: fuzzy select on a
-/// TTY (`None` if aborted), otherwise fail with the candidate list.
-pub fn pick(term: &str, candidates: &[GroupCandidate], truncated: bool) -> Result<Option<String>> {
+/// Shown at most in the non-interactive candidate list.
+const MAX_LISTED: usize = 50;
+
+/// Lets the user choose among several group search hits (or all groups, for
+/// an empty `term`) and returns the chosen group's DN. Same rules as
+/// `user_picker::pick`: fuzzy select on a TTY (`None` if aborted), otherwise
+/// fail with the candidate list.
+pub fn pick(term: &str, candidates: &[GroupCandidate]) -> Result<Option<String>> {
     if !stdout_is_interactive() {
         return Err(AppError::AmbiguousGroup {
             term: term.to_string(),
-            candidates: candidate_list(candidates, truncated),
+            candidates: candidate_list(candidates),
         });
     }
 
     let items: Vec<String> = candidates.iter().map(item_label).collect();
-    let prompt = if truncated {
-        format!("more than {SEARCH_LIMIT} groups match '{term}' (showing first {SEARCH_LIMIT}) — type to filter, Enter to select, Esc to quit")
+    let prompt = if term.is_empty() {
+        format!(
+            "{} groups — type to filter, Enter to select, Esc to quit",
+            candidates.len()
+        )
     } else {
         format!(
             "{} groups match '{term}' — type to filter, Enter to select, Esc to quit",
@@ -39,11 +45,16 @@ fn item_label(c: &GroupCandidate) -> String {
 
 /// Lists DNs rather than CNs: the same CN can exist in several OUs, and the
 /// DN is something the caller can pass back verbatim.
-fn candidate_list(candidates: &[GroupCandidate], truncated: bool) -> String {
-    let mut lines: Vec<String> = candidates.iter().map(|c| format!("  {}", c.dn)).collect();
-    if truncated {
+fn candidate_list(candidates: &[GroupCandidate]) -> String {
+    let mut lines: Vec<String> = candidates
+        .iter()
+        .take(MAX_LISTED)
+        .map(|c| format!("  {}", c.dn))
+        .collect();
+    if candidates.len() > MAX_LISTED {
         lines.push(format!(
-            "  … more than {SEARCH_LIMIT} matches, please be more specific"
+            "  … and {} more, please be more specific",
+            candidates.len() - MAX_LISTED
         ));
     }
     lines.join("\n")
@@ -71,10 +82,14 @@ mod tests {
     }
 
     #[test]
-    fn candidate_list_shows_dns_and_notes_truncation() {
+    fn candidate_list_shows_dns_and_caps_length() {
         assert_eq!(
-            candidate_list(&[candidate("A", None)], true),
-            "  CN=A,OU=Groups,DC=example,DC=com\n  … more than 50 matches, please be more specific"
+            candidate_list(&[candidate("A", None)]),
+            "  CN=A,OU=Groups,DC=example,DC=com"
         );
+        let many: Vec<_> = (0..53).map(|i| candidate(&format!("G{i}"), None)).collect();
+        let list = candidate_list(&many);
+        assert_eq!(list.lines().count(), MAX_LISTED + 1);
+        assert!(list.ends_with("  … and 3 more, please be more specific"));
     }
 }

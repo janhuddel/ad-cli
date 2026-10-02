@@ -66,10 +66,19 @@ pub fn group_filter(identifier: &str) -> String {
     )
 }
 
-/// Ambiguous Name Resolution filter restricted to group objects.
-pub fn group_anr_filter(term: &str) -> String {
-    let escaped = escape_filter_value(term);
-    format!("(&(objectCategory=group)(anr={escaped}))")
+/// Group search filter: every whitespace-separated word of `term` must occur
+/// somewhere (substring, not just prefix like ANR) in the group's CN,
+/// sAMAccountName or description, so "sap admin" finds "GRP-SAP-Admins".
+/// An empty term matches all groups.
+pub fn group_search_filter(term: &str) -> String {
+    let words: String = term
+        .split_whitespace()
+        .map(|w| {
+            let e = escape_filter_value(w);
+            format!("(|(cn=*{e}*)(sAMAccountName=*{e}*)(description=*{e}*))")
+        })
+        .collect();
+    format!("(&(objectCategory=group){words})")
 }
 
 #[cfg(test)]
@@ -98,9 +107,16 @@ mod tests {
             group_filter("g*(x)"),
             "(&(objectCategory=group)(|(sAMAccountName=g\\2a\\28x\\29)(cn=g\\2a\\28x\\29)(distinguishedName=g\\2a\\28x\\29)))"
         );
+    }
+
+    #[test]
+    fn group_search_filter_requires_every_word_as_substring() {
         assert_eq!(
-            group_anr_filter("App-Admins*"),
-            "(&(objectCategory=group)(anr=App-Admins\\2a))"
+            group_search_filter(" sap  ad*min "),
+            "(&(objectCategory=group)\
+             (|(cn=*sap*)(sAMAccountName=*sap*)(description=*sap*))\
+             (|(cn=*ad\\2amin*)(sAMAccountName=*ad\\2amin*)(description=*ad\\2amin*)))"
         );
+        assert_eq!(group_search_filter(""), "(&(objectCategory=group))");
     }
 }

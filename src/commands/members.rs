@@ -12,8 +12,8 @@ pub async fn run(args: MembersArgs, config_override: Option<&PathBuf>) -> Result
     let mut conn = ldap::connect(&session.config).await?;
     ldap::bind(&mut conn, &session.config.bind_identity, &session.password).await?;
 
-    let Some(group_dn) = resolve_group(&mut conn, &session.config.base_dn, &args.group).await?
-    else {
+    let input = args.group.join(" ");
+    let Some(group_dn) = resolve_group(&mut conn, &session.config.base_dn, &input).await? else {
         let _ = conn.unbind().await;
         return Ok(());
     };
