@@ -6,6 +6,17 @@ Das Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 
 ## [Unreleased]
 
+## [2.0.0-beta.1] - 2026-10-02
+
+Ab dieser Version enthält das Repository zwei Tools, die gemeinsam versioniert und released werden: `ad` und das neue `idm`. Für `ad` ändert sich nichts – Befehle, Ausgaben und gespeicherte Anmeldungen bleiben unverändert gültig.
+
+### Hinzugefügt
+- Neues Tool `idm` für den Identity Manager (NetIQ/OpenText IdM auf eDirectory):
+  - `idm user <id|name>` zeigt alle Attribute eines Benutzers, `idm rights <id|name>` seine Rechte (Attribut `rightvalue`) – interaktiv als Fuzzy-Filter oder per `--output table|csv|json`. Benutzer werden exakt über `cn`/`uid`/`mail`/`workforceID` oder per Namenssuche gefunden.
+  - Mehrere Stages: `idm login --stage <name>` richtet je Stage eine eigene Verbindung ein, `--stage` bzw. `IDM_STAGE` wählt sie aus, sonst gilt die Default-Stage (`idm stage`, `idm stage default <name>`).
+  - Anonymer Zugriff ohne Benutzer/Passwort (`idm login --anonymous`).
+- Release enthält `ad-<version>-x86_64-windows.exe` und `idm-<version>-x86_64-windows.exe`; das ZIP heißt jetzt `ad-cli-<version>-x86_64-windows.zip` und enthält beide Tools.
+
 ## [1.2.0] - 2026-10-02
 
 ### Geändert
@@ -58,7 +69,8 @@ Erste öffentliche Beta-Version. **Noch nicht gegen ein echtes Active Directory 
 - `ad groups <id>`: Gruppenmitgliedschaften (direkt oder mit `--recursive` transitiv) mit interaktivem Fuzzy-Filter im Terminal oder als Tabelle/CSV/JSON.
 - Release-Binaries für Windows (x86_64, statisches CRT) und Linux (x86_64, statisch gelinkt mit musl).
 
-[Unreleased]: https://github.com/janhuddel/ad-cli/compare/v1.2.0...HEAD
+[Unreleased]: https://github.com/janhuddel/ad-cli/compare/v2.0.0-beta.1...HEAD
+[2.0.0-beta.1]: https://github.com/janhuddel/ad-cli/compare/v1.2.0...v2.0.0-beta.1
 [1.2.0]: https://github.com/janhuddel/ad-cli/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/janhuddel/ad-cli/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/janhuddel/ad-cli/compare/v0.1.0-beta.5...v1.0.0
