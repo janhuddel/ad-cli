@@ -1,14 +1,12 @@
 # ad-cli
 
 [![CI](https://github.com/janhuddel/ad-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/janhuddel/ad-cli/actions/workflows/ci.yml)
-[![Release](https://img.shields.io/github/v/release/janhuddel/ad-cli?include_prereleases)](https://github.com/janhuddel/ad-cli/releases)
-
-> **Beta:** Das Tool ist noch nicht gegen ein echtes Active Directory getestet. Bitte zunächst in einer Test-Umgebung ausprobieren.
+[![Release](https://img.shields.io/github/v/release/janhuddel/ad-cli)](https://github.com/janhuddel/ad-cli/releases)
 
 Zwei Kommandozeilen-Tools zum Auslesen von Verzeichnisdaten über LDAPS, primär für Windows gebaut, lauffähig auch unter Linux:
 
 - **`ad`** – Active Directory: Benutzerdetails und Gruppenmitgliedschaften (inkl. verschachtelter/rekursiver Mitgliedschaft).
-- **`idm`** *(Beta)* – Identity Manager (NetIQ/OpenText IdM auf eDirectory): Benutzerdetails und die zugewiesenen fachlichen Rechte, für mehrere Stages (Umgebungen).
+- **`idm`** – Identity Manager (NetIQ/OpenText IdM auf eDirectory): Benutzerdetails und die zugewiesenen fachlichen Rechte, für mehrere Stages (Umgebungen).
 
 ## Funktionen
 
@@ -214,7 +212,7 @@ Ein Passwort wird nie als Kommandozeilenargument akzeptiert (würde in der Shell
 Das Projekt folgt [Semantic Versioning](https://semver.org/lang/de/). Die maßgebliche Version steht im Workspace-`Cargo.toml` unter `[workspace.package]` und gilt für beide Tools (`ad --version`, `idm --version`); Git-Tags tragen ein `v`-Präfix:
 
 - **`1.0.0`** ist die erste stabile Version (davor Betas `0.1.0-beta.N`). Ab hier gelten CLI-Optionen und die JSON-/CSV-Ausgabeformate als stabile Schnittstelle: inkompatible Änderungen daran erfordern eine neue Major-Version, neue Funktionen eine Minor-, Fehlerbehebungen eine Patch-Version.
-- **`2.0.0`** bringt `idm` hinzu; beide Tools werden seitdem gemeinsam versioniert und released. Für `ad` ändert sich nichts.
+- **`2.0.0`** bringt `idm` hinzu; beide Tools werden seitdem gemeinsam versioniert und released, und die Stabilitätszusage gilt auch für `idm`. Für `ad` ändert sich nichts.
 - Vorabversionen tragen ein Suffix (z. B. `1.1.0-beta.1`); Tags mit Bindestrich werden auf GitHub automatisch als *Pre-release* markiert.
 
 Ein Release erstellen:
