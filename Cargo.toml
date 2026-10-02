@@ -4,7 +4,7 @@ resolver = "2"
 
 [workspace.package]
 # One version for both tools: they're released together from this repo.
-version = "2.0.0-beta.3"
+version = "2.0.0"
 edition = "2021"
 authors = ["Jan Rohwer"]
 license = "MIT"
