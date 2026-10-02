@@ -42,7 +42,8 @@ jobs:
           #   platform: x86_64-linux
     runs-on: ${{ matrix.os }}
     env:
-      ARCHIVE: ad-${{ needs.verify-version.outputs.version }}-${{ matrix.platform }}
+      VERSION: ${{ needs.verify-version.outputs.version }}
+      ARCHIVE: ad-cli-${{ needs.verify-version.outputs.version }}-${{ matrix.platform }}
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
@@ -62,34 +63,40 @@ jobs:
           if [[ "${{ matrix.target }}" == *windows-msvc ]]; then
             export RUSTFLAGS="-C target-feature=+crt-static"
           fi
-          cargo build --release --locked --target ${{ matrix.target }}
+          cargo build --release --locked -p ad-cli -p idm-cli --target ${{ matrix.target }}
 
       - name: Package (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
+          $bin = "target/${{ matrix.target }}/release"
           New-Item -ItemType Directory -Path $env:ARCHIVE | Out-Null
-          Copy-Item "target/${{ matrix.target }}/release/ad.exe", README.md, LICENSE, CHANGELOG.md $env:ARCHIVE
+          Copy-Item "$bin/ad.exe", "$bin/idm.exe", README.md, LICENSE, CHANGELOG.md $env:ARCHIVE
           Compress-Archive -Path $env:ARCHIVE -DestinationPath "$env:ARCHIVE.zip"
-          Copy-Item "target/${{ matrix.target }}/release/ad.exe" "$env:ARCHIVE.exe"
+          foreach ($tool in "ad", "idm") {
+            Copy-Item "$bin/$tool.exe" "$tool-$env:VERSION-${{ matrix.platform }}.exe"
+          }
 
       - name: Package (Linux)
         if: runner.os == 'Linux'
         shell: bash
         run: |
+          bin="target/${{ matrix.target }}/release"
           mkdir "$ARCHIVE"
-          cp "target/${{ matrix.target }}/release/ad" README.md LICENSE CHANGELOG.md "$ARCHIVE/"
+          cp "$bin/ad" "$bin/idm" README.md LICENSE CHANGELOG.md "$ARCHIVE/"
           tar -czf "$ARCHIVE.tar.gz" "$ARCHIVE"
-          cp "target/${{ matrix.target }}/release/ad" "$ARCHIVE"-bin
+          for tool in ad idm; do
+            cp "$bin/$tool" "$tool-$VERSION-${{ matrix.platform }}-bin"
+          done
 
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ env.ARCHIVE }}
           path: |
             ${{ env.ARCHIVE }}.zip
-            ${{ env.ARCHIVE }}.exe
             ${{ env.ARCHIVE }}.tar.gz
-            ${{ env.ARCHIVE }}-bin
+            *-${{ env.VERSION }}-${{ matrix.platform }}.exe
+            *-${{ env.VERSION }}-${{ matrix.platform }}-bin
           if-no-files-found: error
 
   release:

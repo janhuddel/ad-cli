@@ -1,0 +1,25 @@
+[package]
+name = "ad-cli"
+version.workspace = true
+description = "Query Active Directory user details and group memberships over LDAPS"
+readme = "../../README.md"
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[[bin]]
+name = "ad"
+path = "src/main.rs"
+
+[dependencies]
+ldap-cli-core.workspace = true
+clap.workspace = true
+tokio.workspace = true
+ldap3.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+csv.workspace = true
+comfy-table.workspace = true
+console.workspace = true
+chrono.workspace = true

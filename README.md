@@ -5,7 +5,10 @@
 
 > **Beta:** Das Tool ist noch nicht gegen ein echtes Active Directory getestet. Bitte zunächst in einer Test-Umgebung ausprobieren.
 
-Kommandozeilen-Tool zum Auslesen von Active-Directory-Daten über LDAPS: Benutzerdetails und Gruppenmitgliedschaften (inkl. verschachtelter/rekursiver Mitgliedschaft). Primär für Windows gebaut, läuft ebenso unter Linux.
+Zwei Kommandozeilen-Tools zum Auslesen von Verzeichnisdaten über LDAPS, primär für Windows gebaut, lauffähig auch unter Linux:
+
+- **`ad`** – Active Directory: Benutzerdetails und Gruppenmitgliedschaften (inkl. verschachtelter/rekursiver Mitgliedschaft).
+- **`idm`** *(Beta)* – Identity Manager (NetIQ/OpenText IdM auf eDirectory): Benutzerdetails und die zugewiesenen fachlichen Rechte, für mehrere Stages (Umgebungen).
 
 ## Funktionen
 
@@ -14,18 +17,19 @@ Kommandozeilen-Tool zum Auslesen von Active-Directory-Daten über LDAPS: Benutze
 - **`ad groups <id>`** – listet die Gruppenmitgliedschaften eines Benutzers. Bei vielen (100+) Gruppen interaktiv durchsuchbar (Fuzzy-Filter), alternativ als CSV/JSON für die Weiterverarbeitung in Skripten. Optional rekursiv (`--recursive`), um auch verschachtelte Mitgliedschaften aufzulösen.
 - **`ad members [gruppe]`** – listet die Mitglieder einer Gruppe (Benutzer, Gruppen, Computer, Kontakte), ebenfalls interaktiv durchsuchbar oder als Tabelle/CSV/JSON, optional rekursiv.
 - **`ad whoami`** / **`ad logout`** – aktuelle Verbindung anzeigen bzw. gespeicherte Zugangsdaten entfernen.
+- **`idm user <id>`** / **`idm rights <id>`** – alle Attribute eines IdM-Benutzers bzw. seine Rechte (Attribut `rightvalue`), wahlweise für jede eingerichtete Stage (`--stage`). Details unter [IdM-Abfragen](#idm-abfragen-idm).
 
 ## Download
 
-Fertige Binaries gibt es auf der [Releases-Seite](https://github.com/janhuddel/ad-cli/releases) unter *Assets*. Das Binary ist statisch gelinkt und brauchen keine weiteren Abhängigkeiten (unter Windows keine Visual-C++-Runtime):
+Fertige Binaries gibt es auf der [Releases-Seite](https://github.com/janhuddel/ad-cli/releases) unter *Assets*. Die Binaries sind statisch gelinkt und brauchen keine weiteren Abhängigkeiten (unter Windows keine Visual-C++-Runtime). Beide Tools erscheinen gemeinsam mit derselben Version:
 
-| Plattform | Direkt-Download | Archiv (inkl. README, LICENSE, CHANGELOG) |
+| Plattform | Direkt-Download | Archiv mit beiden Tools (inkl. README, LICENSE, CHANGELOG) |
 |---|---|---|
-| Windows (x86_64) | `ad-<version>-x86_64-windows.exe` | `ad-<version>-x86_64-windows.zip` |
+| Windows (x86_64) | `ad-<version>-x86_64-windows.exe`, `idm-<version>-x86_64-windows.exe` | `ad-cli-<version>-x86_64-windows.zip` |
 
 Linux-Binaries werden derzeit nicht automatisch gebaut; unter Linux kann das Tool selbst kompiliert werden (siehe [Statisches Linux-Binary](#statisches-linux-binary)).
 
-Die Datei kann nach dem Download beliebig umbenannt werden, z. B. in `ad.exe`.
+Die Dateien können nach dem Download beliebig umbenannt werden, z. B. in `ad.exe` und `idm.exe`.
 
 Die Prüfsummen aller Dateien stehen in `SHA256SUMS.txt`:
 
@@ -46,7 +50,7 @@ Benötigt wird ein Rust-Toolchain (`rustup`, stable).
 cargo build --release
 ```
 
-Das fertige Binary liegt danach unter `target/release/ad` (bzw. `ad.exe` unter Windows).
+Die fertigen Binaries liegen danach unter `target/release/ad` und `target/release/idm` (bzw. `.exe` unter Windows). Einzeln bauen: `cargo build --release -p ad-cli` bzw. `-p idm-cli`.
 
 ### Build für Windows (Cross-Compile von macOS/Linux)
 
@@ -141,6 +145,45 @@ ad logout              # entfernt nur das gespeicherte Passwort
 ad logout --purge      # entfernt zusätzlich die Verbindungsdaten
 ```
 
+## IdM-Abfragen (`idm`)
+
+`idm` funktioniert wie `ad`, fragt aber den Identity Manager ab. Den IdM gibt es in mehreren Stages (z. B. Entwicklung, Test, Produktion), jede mit eigenem LDAP-Server. Jede Stage wird deshalb einmal eingerichtet und bekommt einen frei wählbaren Namen (Buchstaben, Ziffern, `-`, `_`).
+
+### Stages einrichten
+
+```sh
+idm login --stage prod --host <idm-host> --base-dn <base-dn-der-benutzer> --anonymous
+idm login --stage test --host <idm-test-host> --base-dn <base-dn-der-benutzer> --anonymous
+```
+
+Mit `--anonymous` (oder einer leer gelassenen Bind-DN im Prompt) wird ohne Benutzer und Passwort zugegriffen; der Login prüft dann, ob die Base DN lesbar ist, und speichert erst danach. Für einen Zugriff mit Kennung stattdessen `--bind-identity <bind-dn>` angeben – das Passwort wird wie bei `ad` abgefragt und verschlüsselt gespeichert.
+
+Die zuerst eingerichtete Stage wird zur **Default-Stage**. Welche Stage ein Befehl verwendet:
+
+1. `--stage <name>` bzw. die Umgebungsvariable `IDM_STAGE`,
+2. sonst die Default-Stage,
+3. sonst die einzige eingerichtete Stage.
+
+```sh
+idm stage                  # eingerichtete Stages auflisten (* = Default)
+idm stage default test     # Default-Stage ändern
+idm --stage test whoami    # Verbindungsdaten einer Stage (--verify prüft die Verbindung)
+idm --stage test logout --purge   # Stage komplett entfernen
+```
+
+### Benutzer und Rechte abfragen
+
+```sh
+idm user U123456                   # alle Attribute des Benutzers (Default-Stage)
+idm user max müller                # Namenssuche, mehrere Treffer öffnen eine Auswahl
+idm rights U123456                 # Rechte, interaktiv durchsuchbar
+idm --stage test rights U123456    # Rechte in einer anderen Stage
+idm rights U123456 --output csv > rechte.csv
+idm rights U123456 --output json
+```
+
+Der Benutzer wird zuerst exakt über `cn`, `uid`, `mail` oder `workforceID` gesucht, sonst per Namenssuche (jedes Wort muss in `cn`, Vor-/Nachname, `fullName` oder `mail` vorkommen). `idm user` zeigt sämtliche Attribute, die der Server liefert; die Rechte erscheinen dort nur als Anzahl. `idm rights` listet die Werte des Attributs `rightvalue` sortiert und ohne Duplikate – im Terminal als Fuzzy-Filter (Enter zeigt den vollständigen Wert), sonst als Tabelle/CSV/JSON (`[{"value": "…"}]`).
+
 ## Speicherort & Schutz der Zugangsdaten
 
 Verbindungsdaten und Zugangsdaten werden pro Benutzer getrennt in zwei Dateien abgelegt:
@@ -149,6 +192,8 @@ Verbindungsdaten und Zugangsdaten werden pro Benutzer getrennt in zwei Dateien a
 |---|---|---|
 | Windows | `%APPDATA%\ad-cli\` | `config.toml`, `credentials.bin` |
 | Linux | `~/.config/ad-cli/` (bzw. `$XDG_CONFIG_HOME`) | `config.toml`, `credentials.bin` |
+
+`idm` legt seine Daten getrennt davon in `%APPDATA%\idm-cli\` bzw. `~/.config/idm-cli/` ab: pro Stage ein Unterverzeichnis `stages/<name>/` mit denselben beiden Dateien (`credentials.bin` nur bei Zugriff mit Kennung), dazu `settings.toml` mit der Default-Stage.
 
 - `config.toml` enthält Host, Port, Base DN und die Bind-Identität im Klartext (keine Geheimnisse).
 - `credentials.bin` enthält ausschließlich das verschlüsselte Passwort:
@@ -161,27 +206,29 @@ Ein Passwort wird nie als Kommandozeilenargument akzeptiert (würde in der Shell
 
 - Automatisierte Tests decken nur Ausgabeformatierung und Auswahl-Logik ab; die LDAP-Logik (Ranged-`memberOf`-Abruf, rekursive Gruppenauflösung, Attribut-Parsing) wird nicht automatisiert gegen ein AD getestet. Der Ranged-Abruf greift erst ab mehr als 1500 direkten Gruppen und ist in der Praxis kaum erprobt.
 - `ad members` listet keine Mitgliedschaften über die *primäre Gruppe* eines Kontos (`primaryGroupID`, typischerweise „Domain Users“ / „Domänen-Benutzer“): AD speichert diese weder im `member`- noch im `memberOf`-Attribut.
+- `idm` ist neu und wurde ohne Zugriff auf einen echten IdM-Server entwickelt: Welche Attribute einen Benutzer identifizieren und wo die Rechte stehen, beruht auf Annahmen (siehe `crates/idm-cli/src/directory.rs`). Rechte lassen sich bisher nur pro Benutzer anzeigen, nicht umgekehrt (wer hat ein bestimmtes Recht), und nicht im Vergleich über Stages.
 - `lastLogon` wird nicht zwischen Domain Controllern repliziert und spiegelt daher nur den antwortenden DC wider; `lastLogonTimestamp` ist repliziert, kann aber bis zu ~14 Tage nachhinken.
 
 ## Versionierung & Release
 
-Das Projekt folgt [Semantic Versioning](https://semver.org/lang/de/). Die maßgebliche Version steht in `Cargo.toml` (`ad --version` zeigt sie an), Git-Tags tragen ein `v`-Präfix:
+Das Projekt folgt [Semantic Versioning](https://semver.org/lang/de/). Die maßgebliche Version steht im Workspace-`Cargo.toml` unter `[workspace.package]` und gilt für beide Tools (`ad --version`, `idm --version`); Git-Tags tragen ein `v`-Präfix:
 
 - **`1.0.0`** ist die erste stabile Version (davor Betas `0.1.0-beta.N`). Ab hier gelten CLI-Optionen und die JSON-/CSV-Ausgabeformate als stabile Schnittstelle: inkompatible Änderungen daran erfordern eine neue Major-Version, neue Funktionen eine Minor-, Fehlerbehebungen eine Patch-Version.
+- **`2.0.0`** bringt `idm` hinzu; beide Tools werden seitdem gemeinsam versioniert und released. Für `ad` ändert sich nichts.
 - Vorabversionen tragen ein Suffix (z. B. `1.1.0-beta.1`); Tags mit Bindestrich werden auf GitHub automatisch als *Pre-release* markiert.
 
 Ein Release erstellen:
 
 ```sh
-# 1. Version in Cargo.toml anpassen, z. B. version = "1.0.1"
+# 1. Version im Workspace-Cargo.toml ([workspace.package]) anpassen, z. B. version = "2.0.1"
 cargo check                       # aktualisiert Cargo.lock
 # 2. CHANGELOG.md: Abschnitt [Unreleased] in die neue Version überführen
-git commit -am "chore: release v1.0.1"
-git tag -a v1.0.1 -m "v1.0.1"
+git commit -am "chore: release v2.0.1"
+git tag -a v2.0.1 -m "v2.0.1"
 git push origin main --follow-tags
 ```
 
-Der Tag-Push startet den Workflow `.github/workflows/release.yml`. Er prüft, dass Tag und `Cargo.toml`-Version übereinstimmen, baut das Windows-Binary und legt ein GitHub-Release mit den Binaries, Archiven und `SHA256SUMS.txt` an.
+Der Tag-Push startet den Workflow `.github/workflows/release.yml`. Er prüft, dass Tag und `Cargo.toml`-Version übereinstimmen, baut die Windows-Binaries beider Tools und legt ein GitHub-Release mit den Binaries, Archiven und `SHA256SUMS.txt` an.
 
 ## Lizenz
 

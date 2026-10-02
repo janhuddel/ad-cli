@@ -1,18 +1,17 @@
-[package]
-name = "ad-cli"
-version = "1.2.0"
+[workspace]
+members = ["crates/*"]
+resolver = "2"
+
+[workspace.package]
+# One version for both tools: they're released together from this repo.
+version = "2.0.0-beta.1"
 edition = "2021"
-description = "Query Active Directory user details and group memberships over LDAPS"
 authors = ["Jan Rohwer"]
 license = "MIT"
 repository = "https://github.com/janhuddel/ad-cli"
-readme = "README.md"
 
-[[bin]]
-name = "ad"
-path = "src/main.rs"
-
-[dependencies]
+[workspace.dependencies]
+ldap-cli-core = { path = "crates/ldap-cli-core" }
 clap = { version = "4.6", features = ["derive", "env"] }
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "net", "time"] }
 ldap3 = { version = "0.12", default-features = false, features = ["tls-rustls-ring"] }
@@ -29,16 +28,6 @@ zeroize = { version = "1.8", features = ["derive"] }
 dirs = "5"
 crossterm = "0.29"
 fuzzy-matcher = "0.3"
-
-[target.'cfg(windows)'.dependencies]
-windows = { version = "0.58", features = ["Win32_Security_Cryptography", "Win32_Foundation"] }
-
-[target.'cfg(unix)'.dependencies]
-libc = "0.2"
-aes-gcm = "0.10"
-hkdf = "0.12"
-sha2 = "0.10"
-rand = "0.8"
 
 [profile.release]
 strip = true
