@@ -6,6 +6,12 @@ Das Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 
 ## [Unreleased]
 
+## [2.0.0-beta.2] - 2026-10-02
+
+### Behoben
+- Windows: TLS läuft jetzt über den in Windows eingebauten TLS-Stack (Schannel) statt über rustls. Damit klappt die Verbindung auch zu Servern, die nur ältere Cipher-Suites anbieten – vorher brach der Login mit `received fatal alert: HandshakeFailure` ab (auch mit `--insecure-skip-verify`).
+- Antwortet ein Server nicht, hängen `ad` und `idm` nicht mehr unbegrenzt: Verbindungsaufbau inkl. TLS-Handshake bricht nach 10 s ab, Bind und Login-Prüfung nach 30 s.
+
 ## [2.0.0-beta.1] - 2026-10-02
 
 Ab dieser Version enthält das Repository zwei Tools, die gemeinsam versioniert und released werden: `ad` und das neue `idm`. Für `ad` ändert sich nichts – Befehle, Ausgaben und gespeicherte Anmeldungen bleiben unverändert gültig.
@@ -69,7 +75,8 @@ Erste öffentliche Beta-Version. **Noch nicht gegen ein echtes Active Directory 
 - `ad groups <id>`: Gruppenmitgliedschaften (direkt oder mit `--recursive` transitiv) mit interaktivem Fuzzy-Filter im Terminal oder als Tabelle/CSV/JSON.
 - Release-Binaries für Windows (x86_64, statisches CRT) und Linux (x86_64, statisch gelinkt mit musl).
 
-[Unreleased]: https://github.com/janhuddel/ad-cli/compare/v2.0.0-beta.1...HEAD
+[Unreleased]: https://github.com/janhuddel/ad-cli/compare/v2.0.0-beta.2...HEAD
+[2.0.0-beta.2]: https://github.com/janhuddel/ad-cli/compare/v2.0.0-beta.1...v2.0.0-beta.2
 [2.0.0-beta.1]: https://github.com/janhuddel/ad-cli/compare/v1.2.0...v2.0.0-beta.1
 [1.2.0]: https://github.com/janhuddel/ad-cli/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/janhuddel/ad-cli/compare/v1.0.0...v1.1.0

@@ -1,7 +1,8 @@
 use std::collections::HashMap;
+use std::time::Duration;
 
 use ldap3::controls::PagedResults;
-use ldap3::{Ldap, LdapConnAsync, LdapConnSettings, Scope, SearchEntry};
+use ldap3::{Ldap, LdapConnAsync, LdapConnSettings, LdapError, Scope, SearchEntry};
 
 use crate::config::{Config, Session};
 use crate::error::{explain_bind_failure, Error, Result};
@@ -12,18 +13,36 @@ use crate::error::{explain_bind_failure, Error, Result};
 const PAGED_RESULTS_OID: &str = "1.2.840.113556.1.4.319";
 const PAGE_SIZE: i32 = 500;
 
+/// Limit for TCP connect plus TLS handshake. Without it a server that
+/// accepts the connection but never answers would hang the tool forever.
+const CONNECT_TIMEOUT: Duration = Duration::from_secs(10);
+/// Limit for the bind and the login check, which should be instant.
+const QUICK_OP_TIMEOUT: Duration = Duration::from_secs(30);
+
 pub async fn connect(config: &Config) -> Result<Ldap> {
-    let mut settings = LdapConnSettings::new();
+    let url = config.ldaps_url();
+    let mut settings = LdapConnSettings::new().set_conn_timeout(CONNECT_TIMEOUT);
     if config.insecure_skip_verify {
         settings = settings.set_no_tls_verify(true);
     }
-    let (conn, ldap) = LdapConnAsync::with_settings(settings, &config.ldaps_url()).await?;
+    let (conn, ldap) = LdapConnAsync::with_settings(settings, &url)
+        .await
+        .map_err(|e| match e {
+            LdapError::Timeout { .. } => Error::Other(format!(
+                "no response from {url} within {}s (is LDAPS offered on this port?)",
+                CONNECT_TIMEOUT.as_secs()
+            )),
+            e => Error::Ldap(e),
+        })?;
     ldap3::drive!(conn);
     Ok(ldap)
 }
 
 pub async fn bind(ldap: &mut Ldap, bind_identity: &str, password: &str) -> Result<()> {
-    let result = ldap.simple_bind(bind_identity, password).await?;
+    let result = ldap
+        .with_timeout(QUICK_OP_TIMEOUT)
+        .simple_bind(bind_identity, password)
+        .await?;
     result
         .success()
         .map_err(|e| Error::BindFailed(explain_bind_failure(&e.to_string())))?;
@@ -43,7 +62,8 @@ pub async fn open(session: &Session) -> Result<Ldap> {
 /// Base-scope read of `base_dn`: proves an anonymous connection actually
 /// works, since without a bind nothing else touches the server.
 pub async fn check_base_dn(ldap: &mut Ldap, base_dn: &str) -> Result<()> {
-    ldap.search(base_dn, Scope::Base, "(objectClass=*)", vec!["1.1"])
+    ldap.with_timeout(QUICK_OP_TIMEOUT)
+        .search(base_dn, Scope::Base, "(objectClass=*)", vec!["1.1"])
         .await?
         .success()
         .map_err(|e| Error::Other(format!("cannot read base DN '{base_dn}': {e}")))?;

@@ -10,7 +10,6 @@ repository.workspace = true
 
 [dependencies]
 tokio.workspace = true
-ldap3.workspace = true
 serde.workspace = true
 toml.workspace = true
 dialoguer.workspace = true
@@ -20,10 +19,15 @@ dirs.workspace = true
 crossterm.workspace = true
 fuzzy-matcher.workspace = true
 
+# TLS backend: Schannel on Windows, which negotiates whatever the OS allows
+# (incl. the older cipher suites some eDirectory servers still require and
+# rustls refuses); rustls on Unix, which keeps the musl build OpenSSL-free.
 [target.'cfg(windows)'.dependencies]
+ldap3 = { workspace = true, features = ["tls-native"] }
 windows = { version = "0.58", features = ["Win32_Security_Cryptography", "Win32_Foundation"] }
 
 [target.'cfg(unix)'.dependencies]
+ldap3 = { workspace = true, features = ["tls-rustls-ring"] }
 libc = "0.2"
 aes-gcm = "0.10"
 hkdf = "0.12"
