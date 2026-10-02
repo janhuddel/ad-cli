@@ -2,7 +2,7 @@
 //! below are educated guesses for an eDirectory-based IdM and the first
 //! place to adjust when lookups don't find what they should.
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashMap};
 
 use ldap3::{Ldap, Scope, SearchEntry, SearchOptions, SearchResult};
 use ldap_cli_core::ldap::escape_filter_value;
@@ -22,6 +22,33 @@ const CANDIDATE_ATTRS: &[&str] = &["cn", "fullName", "givenName", "sn", "mail"];
 
 /// Multi-valued attribute on the user holding the assigned rights.
 pub const RIGHTS_ATTR: &str = "rightvalue";
+
+// Attributes the `idm user` card picks out (DirXML attributes plus the
+// company's own schema extension). Missing ones just leave their line out; `--all` still
+// shows everything the server returned.
+pub const ROLE_ATTR: &str = "PNW-funktion";
+pub const LOGIN_DISABLED_ATTR: &str = "loginDisabled";
+pub const STATUS_ATTR: &str = "PNW-status";
+pub const EFF_STATUS_ATTR: &str = "PNW-eff-status";
+pub const EMPLOYEE_TYPE_ATTR: &str = "employeeType";
+pub const TRAINEE_ATTR: &str = "PNW-azubi";
+pub const MAIL_ATTR: &str = "mail";
+pub const OU_ATTRS: &[&str] = &["ou", "departmentNumber"];
+pub const OU_NAME_ATTR: &str = "PNW-ou-name";
+pub const LOCATION_ATTR: &str = "l";
+pub const COST_CENTER_ATTR: &str = "costCenter";
+pub const COMPANY_ATTR: &str = "company";
+/// Holds the manager's `workforceID`.
+pub const MANAGER_ATTR: &str = "managerWorkforceID";
+/// `dd.mm.yyyy`; `31.12.9999` means no end date.
+pub const FIRST_DAY_ATTR: &str = "DirXML-FirstWorkingDayStr";
+pub const TERMINATION_ATTR: &str = "DirXML-TerminationDateStr";
+/// `dd.mm.yyyy hh:mm:ss`, and the ID of whoever made that change.
+pub const MODIFY_TIME_ATTR: &str = "PNW-modifytime";
+pub const MODIFIER_ATTR: &str = "PNW-modifiername";
+
+/// Attributes a person ID (manager, modifier) is looked up by.
+const PERSON_ID_ATTRS: &[&str] = &["workforceID", "cn"];
 
 /// Cap on name-search hits; beyond this the term is too vague to be useful.
 pub const SEARCH_LIMIT: i32 = 50;
@@ -156,6 +183,64 @@ pub async fn read_user(ldap: &mut Ldap, dn: &str) -> Result<UserEntry> {
     Ok(to_entry(SearchEntry::construct(entry)))
 }
 
+/// Filter matching any of `ids` (deduplicated, case-insensitively) on
+/// `PERSON_ID_ATTRS`; `None` if there's nothing to look up.
+pub fn names_filter(ids: &[&str]) -> Option<String> {
+    let mut ids: Vec<&str> = ids
+        .iter()
+        .map(|s| s.trim())
+        .filter(|s| !s.is_empty())
+        .collect();
+    ids.sort_by_cached_key(|s| s.to_lowercase());
+    ids.dedup_by(|a, b| a.eq_ignore_ascii_case(b));
+    if ids.is_empty() {
+        return None;
+    }
+    let alternatives: String = ids
+        .iter()
+        .flat_map(|id| {
+            let e = escape_filter_value(id);
+            PERSON_ID_ATTRS.iter().map(move |a| format!("({a}={e})"))
+        })
+        .collect();
+    Some(format!("(|{alternatives})"))
+}
+
+/// Display names of the people with the given IDs, keyed by lowercased
+/// ID. Best effort: on any error the map is just empty and callers show
+/// the bare ID.
+pub async fn lookup_names(ldap: &mut Ldap, base_dn: &str, ids: &[&str]) -> HashMap<String, String> {
+    let Some(filter) = names_filter(ids) else {
+        return HashMap::new();
+    };
+    let attrs: Vec<&str> = CANDIDATE_ATTRS
+        .iter()
+        .chain(PERSON_ID_ATTRS)
+        .copied()
+        .collect();
+    let Ok(SearchResult(entries, _)) = ldap
+        .with_search_options(SearchOptions::new().sizelimit(SEARCH_LIMIT))
+        .search(base_dn, Scope::Subtree, &filter, attrs)
+        .await
+    else {
+        return HashMap::new();
+    };
+
+    let mut names = HashMap::new();
+    for entry in entries {
+        let user = to_entry(SearchEntry::construct(entry));
+        let Some(name) = user.display_name() else {
+            continue;
+        };
+        for attr in PERSON_ID_ATTRS {
+            for id in user.values(attr) {
+                names.insert(id.to_lowercase(), name.clone());
+            }
+        }
+    }
+    names
+}
+
 fn to_entry(e: SearchEntry) -> UserEntry {
     UserEntry {
         dn: e.dn,
@@ -182,6 +267,15 @@ mod tests {
             "(&(|(cn=*max*)(givenName=*max*)(sn=*max*)(fullName=*max*)(mail=*max*))\
              (|(cn=*mül*)(givenName=*mül*)(sn=*mül*)(fullName=*mül*)(mail=*mül*)))"
         );
+    }
+
+    #[test]
+    fn names_filter_escapes_and_deduplicates() {
+        assert_eq!(
+            names_filter(&["W1", " w1 ", "", "a*"]).as_deref(),
+            Some("(|(workforceID=a\\2a)(cn=a\\2a)(workforceID=W1)(cn=W1))")
+        );
+        assert_eq!(names_filter(&["", " "]), None);
     }
 
     #[test]

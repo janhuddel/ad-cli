@@ -93,6 +93,9 @@ pub struct UserArgs {
     pub identifier: Vec<String>,
     #[arg(long, value_enum, default_value_t = UserOutputFormat::Compact)]
     pub output: UserOutputFormat,
+    /// Also list every raw attribute the server returned
+    #[arg(long)]
+    pub all: bool,
 }
 
 #[derive(Copy, Clone, ValueEnum)]

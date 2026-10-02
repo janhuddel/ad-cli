@@ -22,3 +22,4 @@ serde_json.workspace = true
 csv.workspace = true
 comfy-table.workspace = true
 console.workspace = true
+chrono.workspace = true

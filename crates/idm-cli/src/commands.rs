@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use ldap3::Ldap;
 use ldap_cli_core::account::{self, LoginInput, LoginPrompts};
 use ldap_cli_core::config::{self, Config, Session};
@@ -108,12 +110,14 @@ pub async fn whoami(args: WhoamiArgs, stage: Option<String>) -> Result<()> {
 pub async fn user(args: UserArgs, stage: Option<String>) -> Result<()> {
     let app = stages::select(stage)?;
     let session = config::load_session(&app, None)?;
-    let Some(user) = load_user(&session, &args.identifier.join(" ")).await? else {
+    let related = matches!(args.output, UserOutputFormat::Compact);
+    let Some((user, names)) = load_user(&session, &args.identifier.join(" "), related).await?
+    else {
         return Ok(());
     };
     let stage = app.stage.as_deref().unwrap_or_default();
     match args.output {
-        UserOutputFormat::Compact => user_view::render_compact(&user, stage),
+        UserOutputFormat::Compact => user_view::render_compact(&user, stage, &names, args.all),
         UserOutputFormat::Json => user_view::render_json(&user)?,
     }
     Ok(())
@@ -122,19 +126,39 @@ pub async fn user(args: UserArgs, stage: Option<String>) -> Result<()> {
 pub async fn rights(args: RightsArgs, stage: Option<String>) -> Result<()> {
     let app = stages::select(stage)?;
     let session = config::load_session(&app, None)?;
-    let Some(user) = load_user(&session, &args.identifier.join(" ")).await? else {
+    let Some((user, _)) = load_user(&session, &args.identifier.join(" "), false).await? else {
         return Ok(());
     };
     let stage = app.stage.as_deref().unwrap_or_default();
     rights_view::display(&user, stage, args.output, args.no_interactive)
 }
 
-/// Resolves the input to one user and reads the full entry. `None` means
-/// the pick was aborted.
-async fn load_user(session: &Session, input: &str) -> Result<Option<UserEntry>> {
+/// Resolves the input to one user and reads the full entry; with `related`
+/// also the names of the people it references (manager, last modifier),
+/// keyed by lowercased ID. `None` means the pick was aborted.
+async fn load_user(
+    session: &Session,
+    input: &str,
+    related: bool,
+) -> Result<Option<(UserEntry, HashMap<String, String>)>> {
+    let base_dn = &session.config.base_dn;
     let mut conn = ldap::open(session).await?;
-    let result = match resolve_user(&mut conn, &session.config.base_dn, input).await {
-        Ok(Some(dn)) => directory::read_user(&mut conn, &dn).await.map(Some),
+    let result = match resolve_user(&mut conn, base_dn, input).await {
+        Ok(Some(dn)) => match directory::read_user(&mut conn, &dn).await {
+            Ok(user) => {
+                let names = if related {
+                    let ids: Vec<&str> = [directory::MANAGER_ATTR, directory::MODIFIER_ATTR]
+                        .iter()
+                        .filter_map(|a| user.first(a))
+                        .collect();
+                    directory::lookup_names(&mut conn, base_dn, &ids).await
+                } else {
+                    HashMap::new()
+                };
+                Ok(Some((user, names)))
+            }
+            Err(e) => Err(e),
+        },
         other => other.map(|_| None),
     };
     let _ = conn.unbind().await;

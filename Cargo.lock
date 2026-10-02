@@ -855,6 +855,7 @@ dependencies = [
 name = "idm-cli"
 version = "2.0.0-beta.2"
 dependencies = [
+ "chrono",
  "clap",
  "comfy-table",
  "console",
